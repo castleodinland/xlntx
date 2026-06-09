@@ -1,0 +1,50 @@
+# Build output
+build/
+build_out/
+build_out_debug/
+out/
+
+# IDE
+.vscode/
+.idea/
+*.user
+*.suo
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+# Compiled artifacts
+*.exe
+*.dll
+*.lib
+*.obj
+*.o
+*.pdb
+*.ilk
+*.exp
+*.aps
+*.idb
+
+# Test data / temp files
+*.xlsx
+
+# CMake generated
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+Makefile
+!**/CMakeLists.txt
+
+# Archive / backup
+*.zip
+*.rar
+*.7z
+*.tar.gz
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+
