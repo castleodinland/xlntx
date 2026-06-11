@@ -15,6 +15,7 @@
 #include <filesystem>
 #include <algorithm>
 
+//CC TODO
 #include "xlntx/xlntx.hpp"
 
 #include <unordered_map>
@@ -46,6 +47,7 @@ std::string check_bin_full_path = "";
 bool is_auto = false;
 
 std::vector<std::string> name_list;
+
 
 std::string libs_info_str = "";
 std::string libs_info_str_sub = "";
