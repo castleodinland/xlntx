@@ -1,6 +1,6 @@
-# third_party_effects_data_gen — CMake 构建脚本
-# 依赖: fmt (header-only), xlntx (自研 xlsx 只读库)
-# Release 输出: ~2MB 独立 EXE, 仅依赖 KERNEL32.dll + USER32.dll
+# third_party_effects_data_gen �? CMake 构建脚本
+# 依赖: fmt (header-only), xlntx (�?�? xlsx �?读库)
+# Release 输出: ~2MB �?�? EXE, 仅依�? KERNEL32.dll + USER32.dll
 cmake_minimum_required(VERSION 3.15.0)
 
 project(third_party_effects_data_gen VERSION 0.1.0)

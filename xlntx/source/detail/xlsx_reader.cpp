@@ -44,6 +44,22 @@ cell_type type_from_string(const std::string &str)
     return cell_type::empty;
 }
 
+// Safe numeric parsing — returns false on failure instead of throwing
+bool safe_stoull(const std::string &s, std::size_t &out)
+{
+    if (s.empty()) return false;
+    try { out = static_cast<std::size_t>(std::stoull(s)); return true; }
+    catch (const std::exception &) { return false; }
+}
+
+bool safe_stod(const std::string &s, double &out)
+{
+    if (s.empty()) return false;
+    try { out = std::stod(s); return true; }
+    catch (const std::exception &) { return false; }
+
+}
+
 std::string resolve_relationship_target(const std::string &base_path, const std::string &target)
 {
     // base_path is like "xl/workbook.xml", target is like "worksheets/sheet1.xml"
@@ -672,18 +688,25 @@ void xlsx_reader::parse_sheet_data(xml_parser &parser, worksheet_impl &ws)
             {
             case cell_type::shared_string:
             {
-                std::size_t idx = static_cast<std::size_t>(std::stoull(pc.value));
-                auto it = wb.shared_strings_values_.find(idx);
-                if (it != wb.shared_strings_values_.end())
+                std::size_t idx = 0;
+                if (safe_stoull(pc.value, idx))
                 {
-                    ci.value_text_ = it->second;
-                    ci.value_numeric_ = static_cast<double>(idx);
+                    auto it = wb.shared_strings_values_.find(idx);
+                    if (it != wb.shared_strings_values_.end())
+                    {
+                        ci.value_text_ = it->second;
+                        ci.value_numeric_ = static_cast<double>(idx);
+                    }
                 }
                 break;
             }
             case cell_type::number:
-                ci.value_numeric_ = std::stod(pc.value);
+            {
+                double num = 0.0;
+                if (safe_stod(pc.value, num))
+                    ci.value_numeric_ = num;
                 break;
+            }
             case cell_type::boolean:
                 ci.value_numeric_ = (pc.value == "1" || pc.value == "true") ? 1.0 : 0.0;
                 break;
@@ -702,7 +725,11 @@ void xlsx_reader::parse_sheet_data(xml_parser &parser, worksheet_impl &ws)
         }
 
         if (!pc.style.empty())
-            ci.format_index_ = static_cast<std::size_t>(std::stoul(pc.style));
+        {
+            std::size_t style_idx = 0;
+            if (safe_stoull(pc.style, style_idx))
+                ci.format_index_ = style_idx;
+        }
 
         ws.cell_map_[ref] = std::move(ci);
     }

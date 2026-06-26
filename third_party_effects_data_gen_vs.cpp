@@ -680,6 +680,13 @@ std::string toUpperCase(const std::string &input)
     return result;
 }
 
+int safe_stoi(const std::string &s, int default_val = 0)
+{
+    if (s.empty()) return default_val;
+    try { return std::stoi(s); }
+    catch (const std::exception &) { return default_val; }
+}
+
 std::vector<int> split_content(const std::string &content, char delimiter)
 {
     std::vector<int> value_check;
@@ -688,7 +695,7 @@ std::vector<int> split_content(const std::string &content, char delimiter)
 
     while (std::getline(iss, token, delimiter))
     {
-        value_check.push_back(std::stoi(token));
+        value_check.push_back(safe_stoi(token));
     }
 
     return value_check;
@@ -944,11 +951,14 @@ int main(int argc, char **argv)
         return 1;
     }
 
+#if 0
     /*first check excel file*/
     try
     {
         for (auto &entry : fs::directory_iterator(work_folder))
         {
+
+
             if (entry.is_directory())
             {
                 std::string excel_full_path = join_paths({to_absolute(entry.path().string()), "UserLibsData.xlsx"});
@@ -965,6 +975,7 @@ int main(int argc, char **argv)
         std::cerr << "filesystem err: " << ex.what() << std::endl;
         press_any_key();
     }
+#endif
 
     /*second check effect bin file*/
     bool found_info_bin = false;
@@ -1006,6 +1017,19 @@ int main(int argc, char **argv)
         {
             if (entry.is_directory())
             {
+                // get folder name
+                std::string folder_name = entry.path().filename().string();
+                if (!folder_name.empty() && folder_name[0] == '.') 
+                {
+                    continue; 
+                }
+
+                fs::path xlsx_path = entry.path() / "UserLibsData.xlsx";
+                if (!fs::exists(xlsx_path))
+                {
+                    continue; 
+                }
+                
                 // fmt::print("found a folder: {}\n", entry.path().string());
                 std::string excel_full_path = join_paths({to_absolute(entry.path().string()), "UserLibsData.xlsx"});
 
@@ -1294,9 +1318,10 @@ int main(int argc, char **argv)
                     }
 
                     // default
-                    libs_info_str_sub += fmt::format("0x{:02X}, 0x{:02X}, \\\n", std::stoi(item.at("default")) & 0xFF, (std::stoi(item.at("default")) >> 8) & 0xFF);
+                    int def_val = safe_stoi(item.at("default"));
+                    libs_info_str_sub += fmt::format("0x{:02X}, 0x{:02X}, \\\n", def_val & 0xFF, (def_val >> 8) & 0xFF);
                     default_param_str += fmt::format("\t\t{} \\\n", aligned_param_to_string(item.at("default")));
-                    default_params_str += fmt::format("0x{:02X}, 0x{:02X},\t//{}\n", std::stoi(item.at("default")) & 0xFF, (std::stoi(item.at("default")) >> 8) & 0xFF, item.at("name"));
+                    default_params_str += fmt::format("0x{:02X}, 0x{:02X},\t//{}\n", def_val & 0xFF, (def_val >> 8) & 0xFF, item.at("name"));
 
                     // param_config
                     libs_info_str_sub += fmt::format("0x{:02X}, 0x{:02X}, \\\n", method_map[item.at("param_config")] & 0xFF, (method_map[item.at("param_config")] >> 8) & 0xFF);
@@ -1335,9 +1360,9 @@ int main(int argc, char **argv)
                     }
 
                     if (item.at("type") == "value" || item.at("type") == "display") // fract
-                        libs_info_str_sub += fmt::format("0x{:02X}, /*fract*/\\\n", std::stoi(item.at("fract")));
-                    if (item.at("type") == "value" || item.at("type") == "display") // fract
-                        libs_info_str_sub += fmt::format("0x{:02X}, 0x{:02X}, /*ratio*/\\\n", std::stoi(item.at("ratio")) & 0xFF, (std::stoi(item.at("ratio")) >> 8) & 0xFF);
+                        libs_info_str_sub += fmt::format("0x{:02X}, /*fract*/\\\n", safe_stoi(item.at("fract")));
+                    if (item.at("type") == "value" || item.at("type") == "display") // ratio
+                        libs_info_str_sub += fmt::format("0x{:02X}, 0x{:02X}, /*ratio*/\\\n", safe_stoi(item.at("ratio")) & 0xFF, (safe_stoi(item.at("ratio")) >> 8) & 0xFF);
 
                     if (item.at("type") == "value" || item.at("type") == "display") // tips
                     {
@@ -1380,8 +1405,8 @@ int main(int argc, char **argv)
 
                         for (const auto &item : param_dict)
                         { // UI Row and Column
-                            grid_row = std::stoi(item.at("Row"));
-                            grid_column = std::stoi(item.at("Column"));
+                            grid_row = safe_stoi(item.at("Row"));
+                            grid_column = safe_stoi(item.at("Column"));
                             libs_info_str_sub += fmt::format("0x{:02X}, 0x{:02X}, /*grid row, grid column*/\\\n", grid_row, grid_column);
                         }
                     }
@@ -1430,7 +1455,7 @@ int main(int argc, char **argv)
 
                 save_bytes_in_string_to_bytes_data(libs_info_str, add_bin_data);
                 third_party_num++;
-
+    
                 // printf("\nfinish one block\n");
                 // break;//ONLY read the first sheet
                 // bit_table.push_back(param_dict);
@@ -1590,7 +1615,7 @@ int main(int argc, char **argv)
             make_crc_table();
 
             // 计算新文件的 CRC32
-            uint32_t checksum = crc32(reinterpret_cast<const unsigned char *>(fileContent.data()), fileContent.size());
+            checksum = crc32(reinterpret_cast<const unsigned char *>(fileContent.data()), fileContent.size());
 
             // 打印 CRC32 方便调试
             fmt::print("Calculated CRC32: 0x{:08X}\n", checksum);

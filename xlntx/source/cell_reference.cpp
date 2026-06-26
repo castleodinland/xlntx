@@ -72,7 +72,12 @@ std::pair<std::string, row_t> cell_reference::split_reference(
             row_str.push_back(c);
     }
 
-    row_t row = row_str.empty() ? 1 : static_cast<row_t>(std::stoul(row_str));
+    row_t row = 1;
+    if (!row_str.empty())
+    {
+        try { row = static_cast<row_t>(std::stoul(row_str)); }
+        catch (const std::exception &) { row = 1; }
+    }
 
     return {col_str, row};
 }
